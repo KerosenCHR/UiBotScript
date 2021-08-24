@@ -1,0 +1,162 @@
+Rem 收藏图片批量自动保存程序
+Rem 执行前请手动打开收藏窗口
+
+/******************** 参数设置 ********************/
+
+Rem 设定抓取次数
+Const catchTime = 400
+
+Rem 设定图片保存路径
+Const savePath = "E:\\QQ\\"
+
+Rem 设定点击坐标偏移量
+Const addX = 450
+Const addY = 180
+
+/****************** 参数设置 End ******************/
+
+Rem 判断收藏窗口是否存在
+Dim isCollectWindowExist = False
+#icon("@res:tffr8mge-ktjo-ej2o-jdvd-23mssaot93dn.png")
+isCollectWindowExist = Window.Exists({"wnd":[{"cls":"TXGFLayerMask","app":"QQ"}]})
+
+If Not isCollectWindowExist
+	Log.Error("未检测到收藏窗口")
+	exit()
+End If
+
+Rem 获取窗口坐标
+Dim collWindow
+#icon("@res:kkdi2b8i-3mpl-mcg3-0j12-fnrionnnc7nb.png")
+collWindow = UiElement.GetRect({"wnd":[{"app":"QQ","cls":"TXGuiFoundation","title":"* 的 收藏"}]},"parent",{"bContinueOnError":False,"iDelayAfter":300,"iDelayBefore":200})
+
+Rem 设定图片点击坐标
+Dim locX = CInt(collWindow["x"]) + addX
+Dim locY = CInt(collWindow["y"]) + addY
+
+Rem 获取任务开始时间
+Const startTime = Time.Now()
+Log.Info("\n本次任务开始时间："&Time.Format(startTime,"yyyy-mm-dd hh:mm:ss")&"\n目标抓取次数："&catchTime&"张\n图片保存路径："&savePath)
+
+Dim i = 1
+
+Do While i < catchTime
+	
+	/******************** 保存流程 ********************/
+	
+	Dialog.Notify("正在保存第"&i&"张图片", "UiBot", 1)
+	
+	Dim retry = 0
+	Do
+		Delay(1000)
+		Rem 移动鼠标到图片位置
+		Mouse.Move(locX,locY, False,{"iDelayAfter":300,"iDelayBefore":200})
+		Rem 右键单击图片
+		Mouse.Click("right", "click", [],{"iDelayAfter":300,"iDelayBefore":200})
+		Delay(250)
+		
+		Rem 判断是否弹出右键菜单
+		Dim isMenuExist = False
+		#icon("@res:1c6al2cm-f8fm-alr7-6qtq-dc65n04b6g6t.png")
+		isMenuExist = Window.Exists({"wnd":[{"cls":"TXGuiFoundation","title":"TXMenuWindow","app":"QQ"}]})
+		
+		retry = retry + 1
+		
+		Rem 重试次数过多时尝试点击查看更多
+		If retry > 15
+			#icon("@res:bsj3bsou-ucct-pn37-amdb-g9a022mh36kk.png")
+			Mouse.Action({"wnd":[{"app":"QQ","cls":"TXGuiFoundation","title":"* 的 收藏"}],"ctrl":[{"role":"ROLE_SYSTEM_PUSHBUTTON","name":"查看更多"}]},"left","click",10000,{"bContinueOnError":False,"iDelayAfter":300,"iDelayBefore":200,"bSetForeground":True,"sCursorPosition":"Center","iCursorOffsetX":0,"iCursorOffsetY":0,"sKeyModifiers":[],"sSimulate":"simulate","bMoveSmoothly":False})
+			Delay(4000)
+			retry = 0
+		End If
+		
+	Loop While Not isMenuExist
+	
+	Rem 点击另存为
+	#icon("@res:jcar2a58-ag1u-49t2-plvt-1cu7ckdrr62m.png")
+	Mouse.Action({"wnd":[{"app":"QQ","cls":"TXGuiFoundation","title":"TXMenuWindow"}],"ctrl":[{"role":"ROLE_SYSTEM_MENUPOPUP","name":"TXMenuWindow"},{"role":"ROLE_SYSTEM_MENUITEM","name":"另存为"}]},"left","click",10000,{"bContinueOnError":False,"iDelayAfter":300,"iDelayBefore":200,"bSetForeground":True,"sCursorPosition":"Center","iCursorOffsetX":0,"iCursorOffsetY":0,"sKeyModifiers":[],"sSimulate":"simulate","bMoveSmoothly":False})
+	Delay(1000)
+	
+	Rem 判断是否弹出保存弹窗
+	Dim isSaveWindowExist = False
+	#icon("@res:gs4v7e5a-bmnd-cc02-piln-ci9d00anmdqk.png")
+	isSaveWindowExist = Window.Exists({"wnd":[{"cls":"#32770","title":"另存为","app":"QQ"}]})
+	
+	If Not isSaveWindowExist
+		Log.Error("未检测到保存弹窗")
+		exit()
+	End If
+	
+	Rem 获取图片文件名
+	Dim imgFileName
+	#icon("@res:21tmpo7q-i2fs-oe31-4m0g-9rllg87os9b6.png")
+	imgFileName = UiElement.GetValue({"wnd":[{"app":"QQ","cls":"#32770","title":"另存为"},{"cls":"ComboBoxEx32","aaname":"文件名(N):"},{"cls":"ComboBox","aaname":"文件名(N):"},{"cls":"Edit","ctrlid":1148,"aaname":"文件名(N):"}]},{"bContinueOnError":False,"iDelayAfter":300,"iDelayBefore":200})
+	
+	Rem 判断文件名是否合规
+	isNameFront = StartsWith(imgFileName,"QQ图片")
+	
+	If Not isNameFront
+		Log.Error("发生错误，请检查")
+		exit()
+	End If
+	
+	Rem 第一次执行时保存到指定的目录
+	If i = 1
+		#icon("@res:3ut9706p-c9r2-9et3-cjgc-50hhv989t39n.png")
+		Keyboard.InputText({"wnd":[{"app":"QQ","cls":"#32770","title":"另存为"},{"cls":"ComboBoxEx32","aaname":"文件名(N):"},{"cls":"ComboBox","aaname":"文件名(N):"},{"cls":"Edit","ctrlid":1148,"aaname":"文件名(N):"}]},savePath&imgFileName,True,20,10000,{"bContinueOnError":False,"iDelayAfter":300,"iDelayBefore":500,"bSetForeground":True,"sSimulate":"message","bValidate":False,"bClickBeforeInput":False})		
+		Delay(1000)
+	End If
+	
+	Rem 点击保存按钮
+	#icon("@res:ssb4bku1-9d11-8vna-uqkp-ee9aknefh1d9.png")
+	Mouse.Action({"wnd":[{"app":"QQ","cls":"#32770","title":"另存为"},{"cls":"Button","title":"保存(&S)","ctrlid":1,"aaname":"保存(S)"}]},"left","click",10000,{"bContinueOnError":False,"iDelayAfter":300,"iDelayBefore":200,"bSetForeground":True,"sCursorPosition":"Center","iCursorOffsetX":0,"iCursorOffsetY":0,"sKeyModifiers":[],"sSimulate":"uia","bMoveSmoothly":False})
+	Delay(1250)
+	
+	/****************** 保存流程 End ******************/
+	
+	/******************** 删除流程 ********************/
+	
+	Rem 判断是否保存成功
+	Dim isSaveGood = False
+	isSaveGood = File.FileExists(savePath&imgFileName)
+	
+	If Not isSaveGood
+		Log.Error("未发现保存的文件")
+		exit()
+	End If
+	
+	Rem 点击删除按钮
+	#icon("@res:i2j851ar-efu8-gctc-s5ps-54ekijnmpe4q.png")
+	Mouse.Action({"wnd":[{"app":"QQ","cls":"TXGuiFoundation","title":"* 的 收藏"}],"ctrl":[{"role":"ROLE_SYSTEM_PUSHBUTTON","idx":23}]},"left","click",10000,{"bContinueOnError":False,"iDelayAfter":300,"iDelayBefore":200,"bSetForeground":True,"sCursorPosition":"Center","iCursorOffsetX":0,"iCursorOffsetY":0,"sKeyModifiers":[],"sSimulate":"simulate","bMoveSmoothly":False})
+	Delay(250)
+	
+	Rem 判断是否弹出删除确认
+	Dim isDelWindowExist = False
+	#icon("@res:14289727-jei3-fp8r-265f-urcajjibv8kg.png")
+	isDelWindowExist = Window.Exists({"wnd":[{"cls":"TXGuiFoundation","title":"提示","app":"QQ"}]})
+	
+	If Not isDelWindowExist
+		Log.Error("未检测到删除确认窗口")
+		exit()
+	End If
+	
+	Rem 点击确认删除
+	#icon("@res:9uhttbe5-4f18-68e8-7ppn-4uir85jbtr5n.png")
+	Mouse.Action({"wnd":[{"app":"QQ","cls":"TXGuiFoundation","title":"提示"}],"ctrl":[{"role":"ROLE_SYSTEM_PUSHBUTTON","name":"确定"}]},"left","click",10000,{"bContinueOnError":False,"iDelayAfter":300,"iDelayBefore":200,"bSetForeground":True,"sCursorPosition":"Center","iCursorOffsetX":0,"iCursorOffsetY":0,"sKeyModifiers":[],"sSimulate":"simulate","bMoveSmoothly":False})
+	Delay(250)
+	
+	TracePrint "第"&i&"张图片保存成功"
+	
+	i = i + 1
+	
+	Rem 计算时间差
+	If (i Mod 10) = 0
+		nowTime = Time.Now()
+		tRet = Time.Format(nowTime-startTime,"hh:mm:ss")
+		TracePrint "任务已执行："&tRet
+	End If
+	
+	/****************** 删除流程 End ******************/
+	
+Loop
+

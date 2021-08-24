@@ -1,0 +1,1 @@
+{"uuid":"39e6b84fd39f2a","version":"5.5.1","flow":[{"rem":"uibot39e6b84fd39390","type":"begin","next":"","x":0,"y":10},{"rem":"uibot39e6b8c3d9bf56","type":"task","desc":"批量保存QQ收藏","in":"","out":"","file":"批量保存qq收藏.task","next":"","x":0,"y":90,"codeModel":0,"exception":""}],"dim":[{"var":"input=\"\"","type":"in"},{"var":"output=\"\"","type":"out"}]}
